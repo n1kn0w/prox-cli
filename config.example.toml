@@ -1,0 +1,7 @@
+[proxmox]
+host = "192.168.68.105"
+port = 8886
+user = "root@pam"
+password = "changeme"
+node = "cyber-range"
+verify_ssl = false
