@@ -1,6 +1,6 @@
 # prox-cli
 
-CLI Rust pour piloter un serveur Proxmox VE via son API REST. Concu pour gerer un Cyber Range (lab de cybersecurite) de maniere automatisee.
+CLI Rust pour piloter un serveur Proxmox VE via son API REST.
 
 ## Fonctionnalites
 
