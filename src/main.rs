@@ -37,6 +37,19 @@ async fn main() -> Result<()> {
         Commands::Template { command } => {
             commands::template::handle(&api, command, cli.json, cli.yes).await
         }
+        Commands::Task { command } => {
+            commands::task::handle(&api, command, cli.json, cli.yes).await
+        }
+        Commands::Backup { command } => {
+            commands::backup::handle(&api, command, cli.json, cli.yes).await
+        }
+        Commands::Node { command } => commands::node::handle(&api, command, cli.json).await,
+        Commands::Pool { command } => {
+            commands::pool::handle(&api, command, cli.json, cli.yes).await
+        }
+        Commands::Firewall { command } => {
+            commands::firewall::handle(&api, command, cli.json, cli.yes).await
+        }
         Commands::Completions { .. } => unreachable!(),
     }
 }

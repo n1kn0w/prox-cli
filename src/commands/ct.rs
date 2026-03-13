@@ -1,4 +1,5 @@
 use anyhow::{bail, Result};
+use serde_json::Value;
 
 use crate::api::ProxmoxClient;
 use crate::cli::CtCommand;
@@ -6,6 +7,50 @@ use crate::output;
 
 pub async fn handle(api: &ProxmoxClient, cmd: CtCommand, json: bool, yes: bool) -> Result<()> {
     match cmd {
+        CtCommand::Templates => {
+            // List all storages that support vztmpl content
+            let storages = api.get("/storage").await?;
+            let mut all_templates: Vec<Value> = Vec::new();
+
+            if let Some(stores) = storages.as_array() {
+                for store in stores {
+                    let content = store["content"].as_str().unwrap_or("");
+                    if !content.contains("vztmpl") {
+                        continue;
+                    }
+                    let name = store["storage"].as_str().unwrap_or("");
+                    let items = api
+                        .get(&format!("/nodes/{}/storage/{}/content", api.node(), name))
+                        .await
+                        .unwrap_or(Value::Null);
+                    if let Some(arr) = items.as_array() {
+                        for item in arr {
+                            if item["content"].as_str() == Some("vztmpl") {
+                                let volid = item["volid"].as_str().unwrap_or("-");
+                                let size = item["size"].as_u64().unwrap_or(0);
+                                let size_mb = format!("{:.0} MB", size as f64 / 1_048_576.0);
+                                all_templates.push(serde_json::json!({
+                                    "ostemplate": volid,
+                                    "size": size_mb,
+                                    "storage": name,
+                                }));
+                            }
+                        }
+                    }
+                }
+            }
+
+            let data = Value::Array(all_templates);
+            output::print_list(
+                &data,
+                json,
+                &[
+                    ("ostemplate", "OSTEMPLATE (use with --ostemplate)"),
+                    ("size", "SIZE"),
+                    ("storage", "STORAGE"),
+                ],
+            );
+        }
         CtCommand::List => {
             let data = api.get(&format!("/nodes/{}/lxc", api.node())).await?;
             output::print_list(

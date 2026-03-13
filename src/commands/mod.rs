@@ -1,6 +1,11 @@
+pub mod backup;
 pub mod ct;
+pub mod firewall;
 pub mod network;
+pub mod node;
+pub mod pool;
 pub mod storage;
+pub mod task;
 pub mod template;
 pub mod user;
 pub mod vm;
