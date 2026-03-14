@@ -15,6 +15,17 @@ CLI Rust pour piloter un serveur Proxmox VE via son API REST. Concu pour gerer u
 - **Tasks** — list, status, log, cancel des operations async
 - **Node** — status serveur, time, dns, version, services, syslog
 - **Pools** — resource pools CRUD, add/remove resources
+- **APT** — repos, update, upgrade, versions, changelog
+- **Guest Agent** — exec, file-read/write, ping, info, network, set-password, fsfreeze/thaw
+- **Disks** — SMART, init-gpt, wipe, LVM/LVMthin CRUD, directory, ZFS detail
+- **Groups** — user groups CRUD
+- **TFA** — two-factor authentication management (TOTP, U2F, WebAuthn, recovery)
+- **Domains** — authentication realms (PAM, PVE, LDAP, AD, OpenID)
+- **Node Firewall** — node-level firewall rules, options, log, refs
+- **Console** — terminal proxy for VM, CT, node shell
+- **Bulk** — start/stop/migrate/suspend all VMs/CTs
+- **Hardware** — PCI/USB device listing for passthrough
+- **Scan** — scan NFS, CIFS, iSCSI, LVM, ZFS, PBS, GlusterFS targets
 - **Shell completions** — bash, zsh, fish, powershell
 
 ## Installation
@@ -124,6 +135,66 @@ prox-cli pool list
 prox-cli pool create --poolid students --comment "Student resources"
 prox-cli pool add students --vmid 300,301,302
 prox-cli pool show students
+
+# Disks
+prox-cli disk smart --disk /dev/sdb
+prox-cli disk lvm-list
+prox-cli disk lvm-create --name myvg --device /dev/sdb --add-storage
+prox-cli disk lvmthin-list
+prox-cli disk dir-list
+prox-cli disk zfs-detail rpool
+prox-cli disk init-gpt --disk /dev/sdb
+prox-cli disk wipe --disk /dev/sdb
+
+# Groups
+prox-cli group list
+prox-cli group create --groupid students --comment "Student group"
+prox-cli group show students
+prox-cli group delete students
+
+# TFA
+prox-cli tfa list
+prox-cli tfa user-list root@pam
+prox-cli tfa add --userid user1@pve --type totp --description "Phone"
+prox-cli tfa delete --userid user1@pve --id tfa-id
+
+# Domains
+prox-cli domain list
+prox-cli domain show pam
+prox-cli domain create --realm myldap --type ldap --server1 ldap.example.com --base-dn "dc=example,dc=com"
+prox-cli domain sync myldap
+prox-cli domain delete myldap
+
+# Node Firewall
+prox-cli node-firewall list
+prox-cli node-firewall add --action DROP --type in --source 10.0.1.0/24 --dport 22 --proto tcp
+prox-cli node-firewall options
+prox-cli node-firewall set-options --enable true --policy-in DROP
+prox-cli node-firewall log --limit 50
+prox-cli node-firewall refs
+
+# Console
+prox-cli console vm 300
+prox-cli console ct 400
+prox-cli console node
+
+# Bulk
+prox-cli bulk start-all
+prox-cli bulk stop-all --vms 300,301,302
+prox-cli bulk suspend-all
+
+# Hardware
+prox-cli hardware pci-list
+prox-cli hardware pci-show 0000:01:00.0
+prox-cli hardware usb-list
+
+# Scan
+prox-cli scan nfs --server 192.168.1.1
+prox-cli scan cifs --server 192.168.1.1 --username admin --password secret
+prox-cli scan iscsi --portal 192.168.1.1
+prox-cli scan lvm
+prox-cli scan zfs
+prox-cli scan pbs --server pbs.local --username root@pam --password secret
 ```
 
 ### Flags globaux
@@ -160,7 +231,18 @@ src/
     ├── backup.rs       # Vzdump backup/restore + jobs schedules
     ├── task.rs         # Suivi des taches async
     ├── node.rs         # Info et diagnostics serveur
-    └── pool.rs         # Pools de ressources
+    ├── pool.rs         # Pools de ressources
+    ├── apt.rs          # Gestion paquets APT
+    ├── agent.rs        # Guest agent (exec, fichiers, etc.)
+    ├── disk.rs         # Disks avances (SMART, LVM, wipe, GPT)
+    ├── group.rs        # Groupes utilisateurs
+    ├── tfa.rs          # Authentification 2FA
+    ├── domain.rs       # Realms d'authentification
+    ├── node_firewall.rs # Firewall node-level
+    ├── console.rs      # Terminal proxy
+    ├── bulk.rs         # Actions en masse
+    ├── hardware.rs     # PCI/USB passthrough
+    └── scan.rs         # Scan storage targets
 ```
 
 ## Dependances

@@ -52,6 +52,33 @@ async fn main() -> Result<()> {
         }
         Commands::Apt { command } => commands::apt::handle(&api, command, cli.json).await,
         Commands::Agent { command } => commands::agent::handle(&api, command, cli.json).await,
+        Commands::Disk { command } => {
+            commands::disk::handle(&api, command, cli.json, cli.yes).await
+        }
+        Commands::Group { command } => {
+            commands::group::handle(&api, command, cli.json, cli.yes).await
+        }
+        Commands::Tfa { command } => {
+            commands::tfa::handle(&api, command, cli.json, cli.yes).await
+        }
+        Commands::Domain { command } => {
+            commands::domain::handle(&api, command, cli.json, cli.yes).await
+        }
+        Commands::NodeFirewall { command } => {
+            commands::node_firewall::handle(&api, command, cli.json, cli.yes).await
+        }
+        Commands::Console { command } => {
+            commands::console::handle(&api, command, cli.json).await
+        }
+        Commands::Bulk { command } => {
+            commands::bulk::handle(&api, command, cli.json, cli.yes).await
+        }
+        Commands::Hardware { command } => {
+            commands::hardware::handle(&api, command, cli.json).await
+        }
+        Commands::Scan { command } => {
+            commands::scan::handle(&api, command, cli.json).await
+        }
         Commands::Completions { .. } => unreachable!(),
     }
 }

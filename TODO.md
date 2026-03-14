@@ -18,18 +18,16 @@ Mettre a jour ce fichier au fur et a mesure de l'implementation.
 - [x] Pools — list, show, create, delete, add, remove
 - [x] APT — repos, update, upgrade, list-upgrades, versions, changelog
 - [x] Guest Agent — exec, file-read, file-write, ping, info, network, fsfreeze/thaw, set-password, shutdown
+- [x] Disks avance — smart, init-gpt, wipe, lvm-list/create/delete, lvmthin-list/create/delete, dir-list/create, zfs-detail
+- [x] Access/Groups — list, show, create, update, delete
+- [x] Access/TFA — list, user-list, add, show, update, delete
+- [x] Access/Domains — list, show, create, update, delete, sync
 
-## A implementer (utile)
-
-- [ ] Disks avance (13 endpoints) — SMART, LVM create/delete, wipedisk, initgpt, directory create
-- [ ] Access/Groups (5 endpoints) — CRUD groupes utilisateurs
-- [ ] Access/TFA (6 endpoints) — 2FA setup/management
-- [ ] Access/Domains (6 endpoints) — Realms (LDAP, AD, PAM, OpenID)
-- [ ] Node firewall (9 endpoints) — Regles firewall au niveau node (pas VM/CT)
-- [ ] Console access (3 endpoints) — spiceshell, vncshell, termproxy
-- [ ] Bulk actions (6 endpoints) — start/stop/migrate/suspend en masse
-- [ ] Hardware info (5 endpoints) — PCI/USB passthrough listing
-- [ ] Scan (8 endpoints) — Scanner NFS, iSCSI, LVM, ZFS, PBS
+- [x] Node Firewall — list, add, show, update, delete rules, options, set-options, log, refs
+- [x] Console — vm, ct, node terminal proxy
+- [x] Bulk — start-all, stop-all, migrate-all, suspend-all
+- [x] Hardware — pci-list, pci-show, pci-mdev, usb-list
+- [x] Scan — nfs, cifs, iscsi, lvm, lvmthin, zfs, pbs, glusterfs
 
 ## Pas prioritaire (single node, pas de Ceph)
 
