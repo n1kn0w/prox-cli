@@ -1,3 +1,5 @@
+pub mod agent;
+pub mod apt;
 pub mod backup;
 pub mod ct;
 pub mod firewall;

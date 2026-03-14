@@ -50,6 +50,8 @@ async fn main() -> Result<()> {
         Commands::Firewall { command } => {
             commands::firewall::handle(&api, command, cli.json, cli.yes).await
         }
+        Commands::Apt { command } => commands::apt::handle(&api, command, cli.json).await,
+        Commands::Agent { command } => commands::agent::handle(&api, command, cli.json).await,
         Commands::Completions { .. } => unreachable!(),
     }
 }
