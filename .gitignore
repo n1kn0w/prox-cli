@@ -1,3 +1,5 @@
 /target
 config.toml
+config.test.toml
 CLAUDE.md
+.DS_Store
