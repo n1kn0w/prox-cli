@@ -14,11 +14,20 @@ use cli::{Cli, Commands};
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    // Shell completions don't need API connection
+    // Commands that don't need API connection
     if let Commands::Completions { shell } = &cli.command {
         let mut cmd = Cli::command();
         generate(*shell, &mut cmd, "prox-cli", &mut std::io::stdout());
         return Ok(());
+    }
+    if let Commands::Conf { command } = cli.command {
+        return match command {
+            cli::ConfCommand::List => config::profile_list(),
+            cli::ConfCommand::Use { name } => config::profile_use(&name),
+            cli::ConfCommand::Show => config::profile_show(),
+            cli::ConfCommand::Add { name, from } => config::profile_add(&name, &from),
+            cli::ConfCommand::Remove { name } => config::profile_remove(&name),
+        };
     }
 
     let config = config::Config::load(&cli.config)?;
@@ -79,6 +88,7 @@ async fn main() -> Result<()> {
         Commands::Scan { command } => {
             commands::scan::handle(&api, command, cli.json).await
         }
+        Commands::Conf { .. } => unreachable!(),
         Commands::Completions { .. } => unreachable!(),
     }
 }
