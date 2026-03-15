@@ -101,7 +101,13 @@ async fn run() -> Result<()> {
             vmid,
             user,
             interface,
-        } => commands::ssh::handle(&api, vmid, &user, interface.as_deref()).await,
+            proxy,
+        } => {
+            let proxy = proxy.or_else(|| {
+                config.ssh.as_ref().and_then(|s| s.proxy.clone())
+            });
+            commands::ssh::handle(&api, vmid, &user, interface.as_deref(), proxy.as_deref()).await
+        }
         Commands::SnapAll {
             name,
             running_only,

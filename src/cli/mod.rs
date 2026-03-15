@@ -197,6 +197,9 @@ pub enum Commands {
         /// Network interface to use for IP resolution
         #[arg(long)]
         interface: Option<String>,
+        /// SSH proxy/jump host (e.g. user@bastion:2222), overrides config
+        #[arg(long, short = 'J')]
+        proxy: Option<String>,
     },
     /// Snapshot all VMs and CTs
     SnapAll {

@@ -5,6 +5,12 @@ use std::path::{Path, PathBuf};
 #[derive(Deserialize)]
 pub struct Config {
     pub proxmox: ProxmoxConfig,
+    pub ssh: Option<SshConfig>,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct SshConfig {
+    pub proxy: Option<String>,
 }
 
 #[derive(Deserialize)]

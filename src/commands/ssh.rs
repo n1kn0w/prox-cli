@@ -7,6 +7,7 @@ pub async fn handle(
     vmid: u32,
     user: &str,
     interface: Option<&str>,
+    proxy: Option<&str>,
 ) -> Result<()> {
     eprintln!("Resolving IP for VM {} via guest agent...", vmid);
 
@@ -59,10 +60,20 @@ pub async fn handle(
         "No IPv4 address found. Ensure the VM has a network interface with an IP and qemu-guest-agent is running.",
     )?;
 
-    eprintln!("Connecting to {}@{}...", user, ip);
+    let destination = format!("{}@{}", user, ip);
 
-    let status = std::process::Command::new("ssh")
-        .arg(format!("{}@{}", user, ip))
+    let mut cmd = std::process::Command::new("ssh");
+
+    if let Some(jump) = proxy {
+        eprintln!("Connecting to {} via proxy {}...", destination, jump);
+        cmd.arg("-J").arg(jump);
+    } else {
+        eprintln!("Connecting to {}...", destination);
+    }
+
+    cmd.arg(&destination);
+
+    let status = cmd
         .stdin(std::process::Stdio::inherit())
         .stdout(std::process::Stdio::inherit())
         .stderr(std::process::Stdio::inherit())
