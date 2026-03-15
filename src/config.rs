@@ -19,23 +19,28 @@ pub struct ProxmoxConfig {
 }
 
 impl Config {
-    pub fn load(path: &Path) -> Result<Self> {
-        let resolved = Self::resolve_path(path);
+    pub fn load(explicit_path: Option<&Path>) -> Result<Self> {
+        let resolved = Self::resolve_path(explicit_path);
         let content = std::fs::read_to_string(&resolved)
             .with_context(|| format!("Cannot read config file: {}", resolved.display()))?;
         toml::from_str(&content).context("Failed to parse config file")
     }
 
-    fn resolve_path(path: &Path) -> PathBuf {
-        // If explicit path exists, use it
-        if path.exists() {
+    fn resolve_path(explicit: Option<&Path>) -> PathBuf {
+        // If user explicitly passed --config, use that
+        if let Some(path) = explicit {
             return path.to_path_buf();
         }
-        // Try active profile
+        // Try active profile first
         if let Some(profile_path) = active_profile_path() {
             if profile_path.exists() {
                 return profile_path;
             }
+        }
+        // Try local config.toml
+        let local = PathBuf::from("config.toml");
+        if local.exists() {
+            return local;
         }
         // Try ~/.config/prox-cli/config.toml
         if let Some(home) = std::env::var_os("HOME") {
@@ -44,8 +49,8 @@ impl Config {
                 return global;
             }
         }
-        // Fallback to original path (will produce a clear error)
-        path.to_path_buf()
+        // Fallback (will produce a clear error)
+        PathBuf::from("config.toml")
     }
 }
 

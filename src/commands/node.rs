@@ -72,14 +72,21 @@ pub async fn handle(api: &ProxmoxClient, cmd: NodeCommand, json: bool) -> Result
             start,
             service,
         } => {
-            let mut path = format!("/nodes/{}/syslog?limit={}", api.node(), limit);
-            if let Some(s) = start {
-                path.push_str(&format!("&start={}", s));
+            let limit_str = limit.to_string();
+            let start_str = start.map(|s| s.to_string());
+            let mut params: Vec<(&str, &str)> = vec![("limit", &limit_str)];
+            if let Some(ref s) = start_str {
+                params.push(("start", s));
             }
             if let Some(ref svc) = service {
-                path.push_str(&format!("&service={}", svc));
+                params.push(("service", svc));
             }
-            let data = api.get(&path).await?;
+            let data = api
+                .get_with_query(
+                    &format!("/nodes/{}/syslog", api.node()),
+                    &params,
+                )
+                .await?;
             if json {
                 println!(
                     "{}",

@@ -1,4 +1,5 @@
 use anyhow::{bail, Context, Result};
+use colored::Colorize;
 use reqwest::{Client, Method};
 use serde_json::Value;
 use std::time::Duration;
@@ -9,10 +10,11 @@ pub struct ProxmoxClient {
     node: String,
     ticket: String,
     csrf_token: String,
+    verbose: u8,
 }
 
 impl ProxmoxClient {
-    pub async fn connect(config: &crate::config::ProxmoxConfig) -> Result<Self> {
+    pub async fn connect(config: &crate::config::ProxmoxConfig, verbose: u8) -> Result<Self> {
         let client = Client::builder()
             .danger_accept_invalid_certs(!config.verify_ssl)
             .timeout(Duration::from_secs(60))
@@ -45,6 +47,7 @@ impl ProxmoxClient {
             node: config.node.clone(),
             ticket,
             csrf_token,
+            verbose,
         })
     }
 
@@ -57,6 +60,7 @@ impl ProxmoxClient {
         method: Method,
         path: &str,
         params: Option<&[(&str, &str)]>,
+        query: Option<&[(&str, &str)]>,
     ) -> Result<Value> {
         let url = format!("{}{}", self.base_url, path);
         let mut req = self
@@ -68,13 +72,70 @@ impl ProxmoxClient {
             req = req.header("CSRFPreventionToken", &self.csrf_token);
         }
 
+        if let Some(q) = query {
+            req = req.query(q);
+        }
+
         if let Some(params) = params {
             req = req.form(params);
+        }
+
+        // -v: log request
+        if self.verbose >= 1 {
+            let query_str = query
+                .map(|q| {
+                    q.iter()
+                        .map(|(k, v)| format!("{}={}", k, v))
+                        .collect::<Vec<_>>()
+                        .join("&")
+                })
+                .unwrap_or_default();
+            if query_str.is_empty() {
+                eprintln!("{} {} {}", ">".dimmed(), method.to_string().cyan(), path);
+            } else {
+                eprintln!(
+                    "{} {} {}?{}",
+                    ">".dimmed(),
+                    method.to_string().cyan(),
+                    path,
+                    query_str.dimmed()
+                );
+            }
+            if let Some(params) = params {
+                if !params.is_empty() {
+                    let body_str = params
+                        .iter()
+                        .map(|(k, v)| {
+                            if *k == "password" {
+                                format!("{}=********", k)
+                            } else {
+                                format!("{}={}", k, v)
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join("&");
+                    eprintln!("{} {}", ">".dimmed(), body_str.dimmed());
+                }
+            }
         }
 
         let resp = req.send().await.context("API request failed")?;
         let status = resp.status();
         let body: Value = resp.json().await.context("Failed to parse API response")?;
+
+        // -vv: log response
+        if self.verbose >= 2 {
+            let status_colored = if status.is_success() {
+                status.to_string().green()
+            } else {
+                status.to_string().red()
+            };
+            eprintln!("{} {}", "<".dimmed(), status_colored);
+            let pretty = serde_json::to_string_pretty(&body).unwrap_or_default();
+            for line in pretty.lines() {
+                eprintln!("{} {}", "<".dimmed(), line.dimmed());
+            }
+        }
 
         if !status.is_success() {
             let message = body["message"].as_str().unwrap_or("Unknown error");
@@ -90,19 +151,23 @@ impl ProxmoxClient {
     }
 
     pub async fn get(&self, path: &str) -> Result<Value> {
-        self.request(Method::GET, path, None).await
+        self.request(Method::GET, path, None, None).await
+    }
+
+    pub async fn get_with_query(&self, path: &str, query: &[(&str, &str)]) -> Result<Value> {
+        self.request(Method::GET, path, None, Some(query)).await
     }
 
     pub async fn post(&self, path: &str, params: &[(&str, &str)]) -> Result<Value> {
-        self.request(Method::POST, path, Some(params)).await
+        self.request(Method::POST, path, Some(params), None).await
     }
 
     pub async fn put(&self, path: &str, params: &[(&str, &str)]) -> Result<Value> {
-        self.request(Method::PUT, path, Some(params)).await
+        self.request(Method::PUT, path, Some(params), None).await
     }
 
     pub async fn delete(&self, path: &str) -> Result<Value> {
-        self.request(Method::DELETE, path, None).await
+        self.request(Method::DELETE, path, None, None).await
     }
 
     pub async fn wait_task(&self, upid: &str) -> Result<()> {

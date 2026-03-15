@@ -60,13 +60,16 @@ pub async fn handle(api: &ProxmoxClient, cmd: AgentCommand, json: bool) -> Resul
             }
         }
         AgentCommand::ExecStatus { vmid, pid } => {
+            let pid_str = pid.to_string();
             let data = api
-                .get(&format!(
-                    "/nodes/{}/qemu/{}/agent/exec-status?pid={}",
-                    api.node(),
-                    vmid,
-                    pid
-                ))
+                .get_with_query(
+                    &format!(
+                        "/nodes/{}/qemu/{}/agent/exec-status",
+                        api.node(),
+                        vmid
+                    ),
+                    &[("pid", pid_str.as_str())],
+                )
                 .await?;
             if json {
                 output::print_raw(&data, true);
@@ -92,12 +95,14 @@ pub async fn handle(api: &ProxmoxClient, cmd: AgentCommand, json: bool) -> Resul
         }
         AgentCommand::FileRead { vmid, file } => {
             let data = api
-                .get(&format!(
-                    "/nodes/{}/qemu/{}/agent/file-read?file={}",
-                    api.node(),
-                    vmid,
-                    file
-                ))
+                .get_with_query(
+                    &format!(
+                        "/nodes/{}/qemu/{}/agent/file-read",
+                        api.node(),
+                        vmid
+                    ),
+                    &[("file", file.as_str())],
+                )
                 .await?;
             if json {
                 output::print_raw(&data, true);

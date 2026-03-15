@@ -12,19 +12,24 @@ pub async fn handle(api: &ProxmoxClient, cmd: TaskCommand, json: bool, yes: bool
             limit,
             errors_only,
         } => {
-            let mut path = format!(
-                "/nodes/{}/tasks?limit={}&source={}",
-                api.node(),
-                limit,
-                source
-            );
-            if let Some(vmid) = vmid {
-                path.push_str(&format!("&vmid={}", vmid));
+            let limit_str = limit.to_string();
+            let vmid_str = vmid.map(|v| v.to_string());
+            let mut params: Vec<(&str, &str)> = vec![
+                ("limit", &limit_str),
+                ("source", &source),
+            ];
+            if let Some(ref v) = vmid_str {
+                params.push(("vmid", v));
             }
             if errors_only {
-                path.push_str("&errors=1");
+                params.push(("errors", "1"));
             }
-            let data = api.get(&path).await?;
+            let data = api
+                .get_with_query(
+                    &format!("/nodes/{}/tasks", api.node()),
+                    &params,
+                )
+                .await?;
             output::print_list(
                 &data,
                 json,
@@ -62,16 +67,18 @@ pub async fn handle(api: &ProxmoxClient, cmd: TaskCommand, json: bool, yes: bool
             );
         }
         TaskCommand::Log { upid, limit, start } => {
-            let mut path = format!(
-                "/nodes/{}/tasks/{}/log?limit={}",
-                api.node(),
-                upid,
-                limit
-            );
-            if let Some(start) = start {
-                path.push_str(&format!("&start={}", start));
+            let limit_str = limit.to_string();
+            let start_str = start.map(|s| s.to_string());
+            let mut params: Vec<(&str, &str)> = vec![("limit", &limit_str)];
+            if let Some(ref s) = start_str {
+                params.push(("start", s));
             }
-            let data = api.get(&path).await?;
+            let data = api
+                .get_with_query(
+                    &format!("/nodes/{}/tasks/{}/log", api.node(), upid),
+                    &params,
+                )
+                .await?;
             if json {
                 println!(
                     "{}",

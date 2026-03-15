@@ -8,11 +8,10 @@ pub async fn handle(api: &ProxmoxClient, cmd: ScanCommand, json: bool) -> Result
     match cmd {
         ScanCommand::Nfs { server } => {
             let data = api
-                .get(&format!(
-                    "/nodes/{}/scan/nfs?server={}",
-                    api.node(),
-                    server
-                ))
+                .get_with_query(
+                    &format!("/nodes/{}/scan/nfs", api.node()),
+                    &[("server", server.as_str())],
+                )
                 .await?;
             output::print_list(
                 &data,
@@ -26,21 +25,22 @@ pub async fn handle(api: &ProxmoxClient, cmd: ScanCommand, json: bool) -> Result
             password,
             domain,
         } => {
-            let mut url = format!(
-                "/nodes/{}/scan/cifs?server={}",
-                api.node(),
-                server
-            );
-            if let Some(u) = &username {
-                url.push_str(&format!("&username={}", u));
+            let mut params: Vec<(&str, &str)> = vec![("server", server.as_str())];
+            if let Some(ref u) = username {
+                params.push(("username", u.as_str()));
             }
-            if let Some(p) = &password {
-                url.push_str(&format!("&password={}", p));
+            if let Some(ref p) = password {
+                params.push(("password", p.as_str()));
             }
-            if let Some(d) = &domain {
-                url.push_str(&format!("&domain={}", d));
+            if let Some(ref d) = domain {
+                params.push(("domain", d.as_str()));
             }
-            let data = api.get(&url).await?;
+            let data = api
+                .get_with_query(
+                    &format!("/nodes/{}/scan/cifs", api.node()),
+                    &params,
+                )
+                .await?;
             output::print_list(
                 &data,
                 json,
@@ -49,11 +49,10 @@ pub async fn handle(api: &ProxmoxClient, cmd: ScanCommand, json: bool) -> Result
         }
         ScanCommand::Iscsi { portal } => {
             let data = api
-                .get(&format!(
-                    "/nodes/{}/scan/iscsi?portal={}",
-                    api.node(),
-                    portal
-                ))
+                .get_with_query(
+                    &format!("/nodes/{}/scan/iscsi", api.node()),
+                    &[("portal", portal.as_str())],
+                )
                 .await?;
             output::print_list(
                 &data,
@@ -73,11 +72,10 @@ pub async fn handle(api: &ProxmoxClient, cmd: ScanCommand, json: bool) -> Result
         }
         ScanCommand::Lvmthin { vg } => {
             let data = api
-                .get(&format!(
-                    "/nodes/{}/scan/lvmthin?vg={}",
-                    api.node(),
-                    vg
-                ))
+                .get_with_query(
+                    &format!("/nodes/{}/scan/lvmthin", api.node()),
+                    &[("vg", vg.as_str())],
+                )
                 .await?;
             output::print_list(
                 &data,
@@ -102,20 +100,24 @@ pub async fn handle(api: &ProxmoxClient, cmd: ScanCommand, json: bool) -> Result
             fingerprint,
             port,
         } => {
-            let mut url = format!(
-                "/nodes/{}/scan/pbs?server={}&username={}&password={}",
-                api.node(),
-                server,
-                username,
-                password
-            );
-            if let Some(fp) = &fingerprint {
-                url.push_str(&format!("&fingerprint={}", fp));
+            let port_str = port.map(|p| p.to_string());
+            let mut params: Vec<(&str, &str)> = vec![
+                ("server", server.as_str()),
+                ("username", username.as_str()),
+                ("password", password.as_str()),
+            ];
+            if let Some(ref fp) = fingerprint {
+                params.push(("fingerprint", fp.as_str()));
             }
-            if let Some(p) = port {
-                url.push_str(&format!("&port={}", p));
+            if let Some(ref p) = port_str {
+                params.push(("port", p.as_str()));
             }
-            let data = api.get(&url).await?;
+            let data = api
+                .get_with_query(
+                    &format!("/nodes/{}/scan/pbs", api.node()),
+                    &params,
+                )
+                .await?;
             output::print_list(
                 &data,
                 json,
@@ -124,11 +126,10 @@ pub async fn handle(api: &ProxmoxClient, cmd: ScanCommand, json: bool) -> Result
         }
         ScanCommand::Glusterfs { server } => {
             let data = api
-                .get(&format!(
-                    "/nodes/{}/scan/glusterfs?server={}",
-                    api.node(),
-                    server
-                ))
+                .get_with_query(
+                    &format!("/nodes/{}/scan/glusterfs", api.node()),
+                    &[("server", server.as_str())],
+                )
                 .await?;
             output::print_list(
                 &data,

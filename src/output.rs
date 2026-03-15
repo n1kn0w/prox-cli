@@ -1,3 +1,4 @@
+use colored::Colorize;
 use serde_json::Value;
 use std::io::{self, Write};
 
@@ -9,6 +10,25 @@ fn format_value(v: &Value) -> String {
         Value::Bool(b) => b.to_string(),
         _ => v.to_string(),
     }
+}
+
+fn colorize_status(val: &str) -> String {
+    match val.to_lowercase().as_str() {
+        "running" => val.green().to_string(),
+        "stopped" => val.red().to_string(),
+        "paused" | "suspended" => val.yellow().to_string(),
+        "online" => val.green().to_string(),
+        "offline" => val.red().to_string(),
+        "ok" => val.green().to_string(),
+        _ => val.to_string(),
+    }
+}
+
+fn is_status_column(header: &str) -> bool {
+    matches!(
+        header.to_uppercase().as_str(),
+        "STATUS" | "STATE" | "EXIT STATUS"
+    )
 }
 
 pub fn print_list(data: &Value, json: bool, columns: &[(&str, &str)]) {
@@ -41,7 +61,7 @@ pub fn print_list(data: &Value, json: bool, columns: &[(&str, &str)]) {
     let header: String = columns
         .iter()
         .zip(&widths)
-        .map(|((_, h), w)| format!("{:<width$}", h, width = *w))
+        .map(|((_, h), w)| format!("{:<width$}", h.bold(), width = *w))
         .collect::<Vec<_>>()
         .join("  ");
     println!("{}", header);
@@ -58,7 +78,14 @@ pub fn print_list(data: &Value, json: bool, columns: &[(&str, &str)]) {
         let row: String = columns
             .iter()
             .zip(&widths)
-            .map(|((key, _), w)| format!("{:<width$}", format_value(&item[*key]), width = *w))
+            .map(|((key, hdr), w)| {
+                let val = format_value(&item[*key]);
+                if is_status_column(hdr) {
+                    format!("{:<width$}", colorize_status(&val), width = *w)
+                } else {
+                    format!("{:<width$}", val, width = *w)
+                }
+            })
             .collect::<Vec<_>>()
             .join("  ");
         println!("{}", row);
@@ -73,10 +100,16 @@ pub fn print_item(data: &Value, json: bool, fields: &[(&str, &str)]) {
 
     let max_label = fields.iter().map(|(_, l)| l.len()).max().unwrap_or(0);
     for (key, label) in fields {
+        let val = format_value(&data[*key]);
+        let display_val = if is_status_column(label) {
+            colorize_status(&val)
+        } else {
+            val
+        };
         println!(
             "{:>width$} : {}",
-            label,
-            format_value(&data[*key]),
+            label.bold(),
+            display_val,
             width = max_label
         );
     }
@@ -95,7 +128,7 @@ pub fn print_raw(data: &Value, json: bool) {
         for key in keys {
             println!(
                 "{:>width$} : {}",
-                key,
+                key.bold(),
                 format_value(&obj[key]),
                 width = max_key
             );

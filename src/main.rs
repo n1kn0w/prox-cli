@@ -7,11 +7,19 @@ mod output;
 use anyhow::Result;
 use clap::{CommandFactory, Parser};
 use clap_complete::generate;
+use colored::Colorize;
 
 use cli::{Cli, Commands};
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
+    if let Err(e) = run().await {
+        eprintln!("{} {:?}", "error:".red().bold(), e);
+        std::process::exit(1);
+    }
+}
+
+async fn run() -> Result<()> {
     let cli = Cli::parse();
 
     // Commands that don't need API connection
@@ -30,8 +38,8 @@ async fn main() -> Result<()> {
         };
     }
 
-    let config = config::Config::load(&cli.config)?;
-    let api = api::ProxmoxClient::connect(&config.proxmox).await?;
+    let config = config::Config::load(cli.config.as_deref())?;
+    let api = api::ProxmoxClient::connect(&config.proxmox, cli.verbose).await?;
 
     match cli.command {
         Commands::Vm { command } => commands::vm::handle(&api, command, cli.json, cli.yes).await,
@@ -87,6 +95,19 @@ async fn main() -> Result<()> {
         }
         Commands::Scan { command } => {
             commands::scan::handle(&api, command, cli.json).await
+        }
+        Commands::Status => commands::status::handle(&api, cli.json).await,
+        Commands::Ssh {
+            vmid,
+            user,
+            interface,
+        } => commands::ssh::handle(&api, vmid, &user, interface.as_deref()).await,
+        Commands::SnapAll {
+            name,
+            running_only,
+        } => commands::snap_all::handle_snap_all(&api, &name, running_only).await,
+        Commands::RollbackAll { name } => {
+            commands::snap_all::handle_rollback_all(&api, &name, cli.yes).await
         }
         Commands::Conf { .. } => unreachable!(),
         Commands::Completions { .. } => unreachable!(),
