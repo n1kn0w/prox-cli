@@ -1,259 +1,321 @@
-# prox-cli
+<h1 align="center">
+  <br>
+  prox-cli
+  <br>
+</h1>
 
-CLI Rust pour piloter un serveur Proxmox VE via son API REST. Concu pour gerer un Cyber Range (lab de cybersecurite) de maniere automatisee.
+<p align="center">
+  <b>A fast, feature-rich CLI for managing Proxmox VE servers from your terminal.</b>
+</p>
 
-## Fonctionnalites
+<p align="center">
+  <a href="#installation">Installation</a> &bull;
+  <a href="#quick-start">Quick Start</a> &bull;
+  <a href="#features">Features</a> &bull;
+  <a href="#usage">Usage</a> &bull;
+  <a href="#contributing">Contributing</a>
+</p>
 
-- **VMs (QEMU)** — list, status, start, stop, shutdown, create, delete, clone, snapshot, rollback
-- **Containers (LXC)** — list, status, start, stop, create, delete, pull OCI/Docker, templates, snapshot, rollback
-- **Storage** — list storages, ZFS pools, disks, usage
-- **Network** — list, create/delete bridges, apply/revert, protection vmbr0
-- **Users** — list, create, delete, set-password, ACL permissions, roles
-- **Templates** — list, convert VM to template, clone from template
-- **Firewall** — regles cluster/VM/CT, IP sets, aliases
-- **Backup** — vzdump create/restore, list, delete, scheduled jobs
-- **Tasks** — list, status, log, cancel des operations async
-- **Node** — status serveur, time, dns, version, services, syslog
-- **Pools** — resource pools CRUD, add/remove resources
-- **APT** — repos, update, upgrade, versions, changelog
-- **Guest Agent** — exec, file-read/write, ping, info, network, set-password, fsfreeze/thaw
-- **Disks** — SMART, init-gpt, wipe, LVM/LVMthin CRUD, directory, ZFS detail
-- **Groups** — user groups CRUD
-- **TFA** — two-factor authentication management (TOTP, U2F, WebAuthn, recovery)
-- **Domains** — authentication realms (PAM, PVE, LDAP, AD, OpenID)
-- **Node Firewall** — node-level firewall rules, options, log, refs
-- **Console** — terminal proxy for VM, CT, node shell
-- **Bulk** — start/stop/migrate/suspend all VMs/CTs
-- **Hardware** — PCI/USB device listing for passthrough
-- **Scan** — scan NFS, CIFS, iSCSI, LVM, ZFS, PBS, GlusterFS targets
-- **Shell completions** — bash, zsh, fish, powershell
+<p align="center">
+  <img alt="Rust" src="https://img.shields.io/badge/rust-stable-orange?logo=rust">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+  <img alt="Proxmox" src="https://img.shields.io/badge/proxmox-VE%208.x-E57000?logo=proxmox">
+</p>
+
+---
+
+**prox-cli** wraps the entire Proxmox VE REST API into a single binary with **150+ commands**, colored output, JSON mode for scripting, and multi-profile support. Built in Rust for speed and reliability.
+
+```bash
+# Dashboard overview
+prox-cli status
+
+# SSH into a VM (IP resolved via guest agent)
+prox-cli ssh 100 --user admin
+
+# Snapshot everything before a lab exercise
+prox-cli snap-all baseline --running-only
+
+# Rollback the whole environment
+prox-cli rollback-all baseline
+```
 
 ## Installation
+
+### From source (recommended)
+
+```bash
+git clone https://github.com/n1kn0w/prox-cli.git
+cd prox-cli
+cargo install --path .
+```
+
+### Build only
 
 ```bash
 cargo build --release
 cp target/release/prox-cli ~/.cargo/bin/
 ```
 
-### Autocompletion (zsh)
+### Shell completions
 
 ```bash
+# Zsh
 mkdir -p ~/.zfunc
 prox-cli completions zsh > ~/.zfunc/_prox-cli
-# Ajouter dans ~/.zshrc :
-# fpath=(~/.zfunc $fpath)
-# autoload -Uz compinit && compinit
+# Add to ~/.zshrc:
+#   fpath=(~/.zfunc $fpath)
+#   autoload -Uz compinit && compinit
+
+# Bash
+prox-cli completions bash > /etc/bash_completion.d/prox-cli
+
+# Fish
+prox-cli completions fish > ~/.config/fish/completions/prox-cli.fish
 ```
 
-## Configuration
+## Quick Start
 
-Copier `config.example.toml` vers `config.toml` et renseigner les credentials Proxmox :
+### 1. Create a config file
 
 ```toml
+# config.toml
 [proxmox]
-host = "192.168.68.105"
-port = 8886
+host = "192.168.1.100"
+port = 8006
 user = "root@pam"
-password = "changeme"
-node = "cyber-range"
+password = "your-password"
+node = "pve"
 verify_ssl = false
 ```
 
-Le fichier est recherche dans cet ordre :
-1. `./config.toml` (repertoire courant)
-2. `~/.config/prox-cli/config.toml`
-3. Ou via `--config <path>`
-
-## Utilisation
+### 2. Save it as a profile
 
 ```bash
-# VMs
+prox-cli conf add homelab config.toml
+prox-cli conf use homelab
+```
+
+### 3. Start using it
+
+```bash
+prox-cli status          # Dashboard overview
+prox-cli vm list         # List all VMs
+prox-cli ct list         # List all containers
+```
+
+### Config resolution order
+
+1. `--config <path>` (explicit override)
+2. Active profile (`prox-cli conf use <name>`)
+3. `./config.toml` (local fallback)
+4. `~/.config/prox-cli/config.toml` (global fallback)
+
+## Features
+
+### Core Management
+
+| Domain | Commands |
+|--------|----------|
+| **VMs (QEMU)** | list, status, start, stop, shutdown, create, delete, clone, config, set, snapshot, rollback |
+| **Containers (LXC)** | list, status, start, stop, create, delete, pull (OCI/Docker), templates, snapshot, rollback |
+| **Storage** | list storages, ZFS pools, disks, usage |
+| **Network** | list, create/delete bridges, apply/revert config, vmbr0 protection |
+| **Users** | list, create, delete, set-password, ACL permissions, roles |
+| **Templates** | list, convert VM to template, clone from template |
+| **Pools** | create, delete, show, add/remove resources |
+
+### Security & Firewall
+
+| Domain | Commands |
+|--------|----------|
+| **Firewall** | cluster/VM/CT rules, IP sets, aliases |
+| **Node Firewall** | node-level rules, options, log, refs |
+| **TFA** | TOTP, U2F, WebAuthn, recovery keys |
+| **Domains** | PAM, PVE, LDAP, AD, OpenID realms |
+| **Groups** | user group CRUD |
+
+### Operations
+
+| Domain | Commands |
+|--------|----------|
+| **Dashboard** | `prox-cli status` — CPU/RAM/disk + VM/CT overview |
+| **SSH** | `prox-cli ssh <vmid>` — resolve IP via guest agent, exec SSH |
+| **Snap-all** | `prox-cli snap-all <name>` — parallel snapshot of all guests |
+| **Rollback-all** | `prox-cli rollback-all <name>` — parallel rollback with confirmation |
+| **Bulk** | start/stop/migrate/suspend all VMs/CTs |
+| **Backup** | vzdump create/restore, list, delete, scheduled jobs |
+| **Tasks** | list, status, log, cancel async operations |
+| **Guest Agent** | exec, file-read/write, ping, network, set-password, fsfreeze |
+
+### Infrastructure
+
+| Domain | Commands |
+|--------|----------|
+| **Node** | status, time, dns, version, services, syslog |
+| **Disks** | SMART, init-gpt, wipe, LVM/LVMthin CRUD, directories, ZFS detail |
+| **Hardware** | PCI/USB device listing for passthrough |
+| **Scan** | NFS, CIFS, iSCSI, LVM, ZFS, PBS, GlusterFS target discovery |
+| **APT** | repos, update, upgrade, versions, changelog |
+| **Console** | terminal proxy for VM, CT, node shell |
+
+### Global Flags
+
+| Flag | Description |
+|------|-------------|
+| `--json` | JSON output for scripting and piping to `jq` |
+| `-y` / `--yes` | Skip interactive confirmations |
+| `-v` | Show API requests on stderr |
+| `-vv` | Show API requests + full JSON responses |
+| `--config <path>` | Override config file path |
+
+## Usage
+
+### Virtual Machines
+
+```bash
 prox-cli vm list
 prox-cli vm create --vmid 300 --name kali --memory 4096 --cores 4 --iso local:iso/kali.iso
 prox-cli vm start 300
 prox-cli vm snapshot 300 --name clean-install
-prox-cli vm clone 300 --newid 301 --name kali-user1 --full
+prox-cli vm clone 300 --newid 301 --name kali-student1 --full
+prox-cli vm stop 300
+prox-cli vm delete 300
+```
 
-# Containers
+### Containers
+
+```bash
 prox-cli ct list
-prox-cli ct templates                    # liste les templates avec le format --ostemplate
+prox-cli ct templates
 prox-cli ct pull --reference docker.io/library/alpine:latest
 prox-cli ct create --vmid 400 --ostemplate bulk-backup:vztmpl/alpine_latest.tar --hostname test --start
 prox-cli ct stop 400
 prox-cli ct delete 400
+```
 
-# Storage
-prox-cli storage status
-prox-cli storage pools
-prox-cli storage disks
+### Network & Firewall
 
-# Network
+```bash
 prox-cli network list
 prox-cli network create --iface vmbr2 --type bridge --vlan-aware --autostart
 prox-cli network apply
 
-# Users
-prox-cli user list
-prox-cli user create --userid student1@pve --password s3cret --firstname John --lastname Doe
-prox-cli user acl --userid student1@pve --path /vms/300 --role PVEVMUser --propagate
-prox-cli user roles
-
-# Templates
-prox-cli template list
-prox-cli template create 300
-prox-cli template clone 300 --newid 301 --name new-vm --storage fast-vms
-
-# Firewall
 prox-cli firewall cluster-rules
-prox-cli firewall cluster-add --action DROP --type in --source 10.0.1.0/24 --dport 22 --proto tcp
-prox-cli firewall vm-rules 300
 prox-cli firewall vm-add 300 --action ACCEPT --type in --dport 80 --proto tcp
 prox-cli firewall ipset-list
-prox-cli firewall alias-list
+```
 
-# Backup
+### Users & Access
+
+```bash
+prox-cli user list
+prox-cli user create --userid student1@pve --password s3cret --firstname John
+prox-cli user acl --userid student1@pve --path /vms/300 --role PVEVMUser --propagate
+prox-cli user roles
+```
+
+### Backup & Restore
+
+```bash
 prox-cli backup create --vmid 300 --storage bulk-backup --mode snapshot
 prox-cli backup list
 prox-cli backup restore --archive bulk-backup:backup/vzdump-qemu-300.vma.zst --vmid 310
-prox-cli backup jobs
+```
 
-# Tasks
-prox-cli task list
-prox-cli task list --errors-only
-prox-cli task status UPID:cyber-range:...
-prox-cli task log UPID:cyber-range:...
+### Storage Scanning
 
-# Node
-prox-cli node status
-prox-cli node version
-prox-cli node dns
-prox-cli node services
-prox-cli node syslog --limit 100
-
-# Pools
-prox-cli pool list
-prox-cli pool create --poolid students --comment "Student resources"
-prox-cli pool add students --vmid 300,301,302
-prox-cli pool show students
-
-# Disks
-prox-cli disk smart --disk /dev/sdb
-prox-cli disk lvm-list
-prox-cli disk lvm-create --name myvg --device /dev/sdb --add-storage
-prox-cli disk lvmthin-list
-prox-cli disk dir-list
-prox-cli disk zfs-detail rpool
-prox-cli disk init-gpt --disk /dev/sdb
-prox-cli disk wipe --disk /dev/sdb
-
-# Groups
-prox-cli group list
-prox-cli group create --groupid students --comment "Student group"
-prox-cli group show students
-prox-cli group delete students
-
-# TFA
-prox-cli tfa list
-prox-cli tfa user-list root@pam
-prox-cli tfa add --userid user1@pve --type totp --description "Phone"
-prox-cli tfa delete --userid user1@pve --id tfa-id
-
-# Domains
-prox-cli domain list
-prox-cli domain show pam
-prox-cli domain create --realm myldap --type ldap --server1 ldap.example.com --base-dn "dc=example,dc=com"
-prox-cli domain sync myldap
-prox-cli domain delete myldap
-
-# Node Firewall
-prox-cli node-firewall list
-prox-cli node-firewall add --action DROP --type in --source 10.0.1.0/24 --dport 22 --proto tcp
-prox-cli node-firewall options
-prox-cli node-firewall set-options --enable true --policy-in DROP
-prox-cli node-firewall log --limit 50
-prox-cli node-firewall refs
-
-# Console
-prox-cli console vm 300
-prox-cli console ct 400
-prox-cli console node
-
-# Bulk
-prox-cli bulk start-all
-prox-cli bulk stop-all --vms 300,301,302
-prox-cli bulk suspend-all
-
-# Hardware
-prox-cli hardware pci-list
-prox-cli hardware pci-show 0000:01:00.0
-prox-cli hardware usb-list
-
-# Scan
+```bash
 prox-cli scan nfs --server 192.168.1.1
 prox-cli scan cifs --server 192.168.1.1 --username admin --password secret
 prox-cli scan iscsi --portal 192.168.1.1
-prox-cli scan lvm
-prox-cli scan zfs
 prox-cli scan pbs --server pbs.local --username root@pam --password secret
 ```
 
-### Flags globaux
+### Debugging with verbose mode
 
-| Flag | Description |
-|------|-------------|
-| `--json` | Sortie JSON (pour scripting, pipes avec jq) |
-| `-y` / `--yes` | Skip les confirmations interactives |
-| `--config <path>` | Chemin vers le fichier de config |
+```bash
+# Show API requests
+prox-cli -v vm list
 
-## Protections
+# Show requests + full JSON responses (like curl -v)
+prox-cli -vv node status
+```
 
-- `vmbr0` et `lo` ne peuvent pas etre modifies/supprimes (interface management)
-- Confirmation interactive sur toutes les actions destructrices (delete, rollback, restore)
-- Credentials dans `config.toml` qui est gitignored
+### JSON mode for scripting
+
+```bash
+# Get all running VM IDs
+prox-cli vm list --json | jq -r '.[] | select(.status=="running") | .vmid'
+
+# Count containers
+prox-cli ct list --json | jq length
+
+# Export node status
+prox-cli node status --json > node-report.json
+```
+
+## Config Profiles
+
+Manage multiple Proxmox environments:
+
+```bash
+prox-cli conf add production config-prod.toml
+prox-cli conf add lab config-lab.toml
+prox-cli conf list        # Shows all profiles (* = active)
+prox-cli conf use lab      # Switch to lab environment
+prox-cli conf show         # Show current config (passwords masked)
+prox-cli conf remove lab
+```
+
+## Safety
+
+- `vmbr0` and `lo` interfaces are protected from modification/deletion
+- Interactive confirmation on all destructive actions (delete, rollback, restore)
+- Skip with `-y` for scripting
+- Passwords masked in `prox-cli conf show` and `-vv` output
+- Credentials stored in config files outside the repo
 
 ## Architecture
 
 ```
 src/
-├── main.rs             # Entry point + routing
-├── cli.rs              # Definitions CLI (clap derive + clap_complete)
-├── config.rs           # Chargement config TOML
-├── api.rs              # Client Proxmox API (auth ticket/CSRF, HTTP, wait_task)
-├── output.rs           # Formatage table + JSON + confirm
+├── main.rs              # Entry point, error handling, command routing
+├── cli/                 # CLI definitions (clap derive)
+│   ├── mod.rs           # Cli struct, Commands enum, re-exports
+│   ├── vm.rs            # VM subcommands
+│   ├── ct.rs            # Container subcommands
+│   ├── firewall.rs      # Firewall subcommands (cluster/VM/CT/ipset/alias)
+│   └── ...              # 20 more domain-specific modules
+├── config.rs            # TOML config loading + profile management
+├── api.rs               # Proxmox API client (auth, HTTP, verbose logging)
+├── output.rs            # Colored tables, JSON output, confirmations
 └── commands/
-    ├── vm.rs           # Gestion VMs QEMU
-    ├── ct.rs           # Gestion Containers LXC + OCI pull + templates
-    ├── storage.rs      # Info stockage
-    ├── network.rs      # Gestion reseau
-    ├── user.rs         # Gestion utilisateurs + ACL
-    ├── template.rs     # Gestion templates VM
-    ├── firewall.rs     # Regles firewall cluster/VM/CT + IP sets + aliases
-    ├── backup.rs       # Vzdump backup/restore + jobs schedules
-    ├── task.rs         # Suivi des taches async
-    ├── node.rs         # Info et diagnostics serveur
-    ├── pool.rs         # Pools de ressources
-    ├── apt.rs          # Gestion paquets APT
-    ├── agent.rs        # Guest agent (exec, fichiers, etc.)
-    ├── disk.rs         # Disks avances (SMART, LVM, wipe, GPT)
-    ├── group.rs        # Groupes utilisateurs
-    ├── tfa.rs          # Authentification 2FA
-    ├── domain.rs       # Realms d'authentification
-    ├── node_firewall.rs # Firewall node-level
-    ├── console.rs      # Terminal proxy
-    ├── bulk.rs         # Actions en masse
-    ├── hardware.rs     # PCI/USB passthrough
-    └── scan.rs         # Scan storage targets
+    ├── vm.rs            # VM operations
+    ├── ct.rs            # Container operations
+    ├── status.rs        # Dashboard (parallel API calls)
+    ├── ssh.rs           # SSH via guest agent IP resolution
+    ├── snap_all.rs      # Parallel snapshot/rollback all guests
+    └── ...              # 20 more command handlers
 ```
 
-## Dependances
+## Dependencies
 
-- `clap` + `clap_complete` — CLI + autocompletion
-- `reqwest` — Client HTTP (TLS, JSON)
-- `tokio` — Runtime async
-- `serde` + `serde_json` — Serialisation
-- `toml` — Parsing config
-- `anyhow` — Gestion d'erreurs
+| Crate | Purpose |
+|-------|---------|
+| `clap` | CLI parsing + shell completions |
+| `reqwest` | HTTP client (TLS, JSON) |
+| `tokio` | Async runtime |
+| `serde` / `serde_json` | Serialization |
+| `colored` | Terminal colors (auto-disabled in pipes) |
+| `futures` | Parallel async operations |
+| `toml` | Config file parsing |
+| `anyhow` | Error handling |
 
-## Licence
+## Contributing
 
-MIT
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+[MIT](LICENSE)
