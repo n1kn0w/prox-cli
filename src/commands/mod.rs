@@ -18,6 +18,7 @@ pub mod snap_all;
 pub mod ssh;
 pub mod status;
 pub mod storage;
+pub mod syslog;
 pub mod task;
 pub mod template;
 pub mod tfa;

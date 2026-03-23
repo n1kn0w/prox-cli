@@ -16,6 +16,7 @@ mod node_firewall;
 mod pool;
 mod scan;
 mod storage;
+mod syslog;
 mod task;
 mod template;
 mod tfa;
@@ -40,6 +41,7 @@ pub use node_firewall::NodeFirewallCommand;
 pub use pool::PoolCommand;
 pub use scan::ScanCommand;
 pub use storage::StorageCommand;
+pub use syslog::SyslogCommand;
 pub use task::TaskCommand;
 pub use template::TemplateCommand;
 pub use tfa::TfaCommand;
@@ -179,6 +181,11 @@ pub enum Commands {
     Hardware {
         #[command(subcommand)]
         command: HardwareCommand,
+    },
+    /// Syslog and journal management (view logs, manage rsyslog service)
+    Syslog {
+        #[command(subcommand)]
+        command: SyslogCommand,
     },
     /// Scan for available storage targets
     Scan {

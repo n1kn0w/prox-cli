@@ -93,6 +93,9 @@ async fn run() -> Result<()> {
         Commands::Hardware { command } => {
             commands::hardware::handle(&api, command, cli.json).await
         }
+        Commands::Syslog { command } => {
+            commands::syslog::handle(&api, command, cli.json, cli.yes).await
+        }
         Commands::Scan { command } => {
             commands::scan::handle(&api, command, cli.json).await
         }
