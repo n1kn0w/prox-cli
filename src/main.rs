@@ -95,6 +95,7 @@ async fn run() -> Result<()> {
         }
         Commands::Syslog { command } => {
             let proxy = config.ssh.as_ref().and_then(|s| s.proxy.clone());
+            let ssh_port = config.ssh.as_ref().and_then(|s| s.port);
             commands::syslog::handle(
                 &api,
                 command,
@@ -102,6 +103,7 @@ async fn run() -> Result<()> {
                 cli.yes,
                 &config.proxmox.host,
                 proxy.as_deref(),
+                ssh_port,
             )
             .await
         }
@@ -118,7 +120,8 @@ async fn run() -> Result<()> {
             let proxy = proxy.or_else(|| {
                 config.ssh.as_ref().and_then(|s| s.proxy.clone())
             });
-            commands::ssh::handle(&api, vmid, &user, interface.as_deref(), proxy.as_deref()).await
+            let ssh_port = config.ssh.as_ref().and_then(|s| s.port);
+            commands::ssh::handle(&api, vmid, &user, interface.as_deref(), proxy.as_deref(), ssh_port).await
         }
         Commands::SnapAll {
             name,

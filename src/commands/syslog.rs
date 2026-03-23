@@ -7,18 +7,22 @@ use crate::output;
 
 const REMOTE_CONF: &str = "/etc/rsyslog.d/remote.conf";
 
-fn ssh_exec(host: &str, ssh_user: &str, proxy: Option<&str>, remote_cmd: &str) -> Result<String> {
+fn ssh_exec(host: &str, ssh_user: &str, proxy: Option<&str>, port: Option<u16>, remote_cmd: &str) -> Result<String> {
     let target = format!("{}@{}", ssh_user, host);
     let mut cmd = Command::new("ssh");
     cmd.arg("-o").arg("StrictHostKeyChecking=accept-new");
+    if let Some(p) = port {
+        cmd.arg("-p").arg(p.to_string());
+    }
     if let Some(p) = proxy {
         cmd.arg("-J").arg(p);
     }
     cmd.arg(&target).arg(remote_cmd);
+    cmd.stdin(std::process::Stdio::inherit());
+    cmd.stderr(std::process::Stdio::inherit());
     let output = cmd.output()?;
     if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("SSH command failed: {}", stderr.trim());
+        bail!("SSH command failed (exit code {})", output.status.code().unwrap_or(-1));
     }
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
@@ -30,6 +34,7 @@ pub async fn handle(
     yes: bool,
     node_host: &str,
     ssh_proxy: Option<&str>,
+    ssh_port: Option<u16>,
 ) -> Result<()> {
     match cmd {
         SyslogCommand::List {
@@ -197,6 +202,7 @@ pub async fn handle(
                 node_host,
                 &ssh_user,
                 proxy_ref,
+                ssh_port,
                 &format!("cat {} 2>/dev/null || echo 'No remote syslog forwarding configured.'", REMOTE_CONF),
             )?;
             print!("{}", result);
@@ -231,7 +237,7 @@ pub async fn handle(
                 "echo -e '{}' > {} && systemctl restart rsyslog",
                 conf_content, REMOTE_CONF
             );
-            ssh_exec(node_host, &ssh_user, proxy_ref, &remote_cmd)?;
+            ssh_exec(node_host, &ssh_user, proxy_ref, ssh_port, &remote_cmd)?;
             println!(
                 "Syslog forwarding set: {} {}{}:{} — rsyslog restarted.",
                 facility, proto, server, port
@@ -251,7 +257,7 @@ pub async fn handle(
                 "rm -f {} && systemctl restart rsyslog",
                 REMOTE_CONF
             );
-            ssh_exec(node_host, &ssh_user, proxy_ref, &remote_cmd)?;
+            ssh_exec(node_host, &ssh_user, proxy_ref, ssh_port, &remote_cmd)?;
             println!("Remote syslog forwarding removed — rsyslog restarted.");
         }
     }

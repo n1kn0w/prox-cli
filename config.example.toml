@@ -5,3 +5,7 @@ user = "root@pam"
 password = "changeme"
 node = "cyber-range"
 verify_ssl = false
+
+[ssh]
+# proxy = "user@bastion:2222"
+port = 22

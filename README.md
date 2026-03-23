@@ -88,12 +88,16 @@ user = "root@pam"
 password = "your-password"
 node = "pve"
 verify_ssl = false
+
+[ssh]
+port = 22
+# proxy = "user@bastion:2222"
 ```
 
 ### 2. Save it as a profile
 
 ```bash
-prox-cli conf add homelab config.toml
+prox-cli conf add homelab --from config.toml
 prox-cli conf use homelab
 ```
 
@@ -243,8 +247,9 @@ prox-cli ssh 100 --user admin
 # SSH through a proxy/jump host
 prox-cli ssh 100 -J user@bastion:2222
 
-# Or configure it globally in config.toml
+# Configure SSH options in config.toml
 # [ssh]
+# port = 2222
 # proxy = "user@bastion:2222"
 ```
 
@@ -292,8 +297,8 @@ prox-cli node status --json > node-report.json
 Manage multiple Proxmox environments:
 
 ```bash
-prox-cli conf add production config-prod.toml
-prox-cli conf add lab config-lab.toml
+prox-cli conf add production --from config-prod.toml
+prox-cli conf add lab --from config-lab.toml
 prox-cli conf list        # Shows all profiles (* = active)
 prox-cli conf use lab      # Switch to lab environment
 prox-cli conf show         # Show current config (passwords masked)

@@ -8,6 +8,7 @@ pub async fn handle(
     user: &str,
     interface: Option<&str>,
     proxy: Option<&str>,
+    port: Option<u16>,
 ) -> Result<()> {
     eprintln!("Resolving IP for VM {} via guest agent...", vmid);
 
@@ -63,6 +64,10 @@ pub async fn handle(
     let destination = format!("{}@{}", user, ip);
 
     let mut cmd = std::process::Command::new("ssh");
+
+    if let Some(p) = port {
+        cmd.arg("-p").arg(p.to_string());
+    }
 
     if let Some(jump) = proxy {
         eprintln!("Connecting to {} via proxy {}...", destination, jump);

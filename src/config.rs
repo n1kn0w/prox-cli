@@ -11,6 +11,7 @@ pub struct Config {
 #[derive(Deserialize, Clone)]
 pub struct SshConfig {
     pub proxy: Option<String>,
+    pub port: Option<u16>,
 }
 
 #[derive(Deserialize)]
@@ -84,6 +85,10 @@ fn active_profile_path() -> Option<PathBuf> {
     Some(PathBuf::from(home).join(format!(".config/prox-cli/{}.toml", name)))
 }
 
+fn sanitize_profile_name(name: &str) -> &str {
+    name.trim_end_matches(".toml")
+}
+
 pub fn profile_list() -> Result<()> {
     let dir = config_dir()?;
     let active_name = active_file()
@@ -111,6 +116,7 @@ pub fn profile_list() -> Result<()> {
 }
 
 pub fn profile_use(name: &str) -> Result<()> {
+    let name = sanitize_profile_name(name);
     let dir = config_dir()?;
     let profile = dir.join(format!("{}.toml", name));
     if !profile.exists() {
@@ -155,6 +161,7 @@ pub fn profile_show() -> Result<()> {
 }
 
 pub fn profile_add(name: &str, source: &Path) -> Result<()> {
+    let name = sanitize_profile_name(name);
     let dir = config_dir()?;
     let dest = dir.join(format!("{}.toml", name));
     // Resolve the source: could be explicit path or ./config.toml
@@ -175,6 +182,7 @@ pub fn profile_add(name: &str, source: &Path) -> Result<()> {
 }
 
 pub fn profile_remove(name: &str) -> Result<()> {
+    let name = sanitize_profile_name(name);
     let dir = config_dir()?;
     let profile = dir.join(format!("{}.toml", name));
     if !profile.exists() {
