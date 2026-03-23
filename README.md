@@ -154,7 +154,7 @@ prox-cli ct list         # List all containers
 | Domain | Commands |
 |--------|----------|
 | **Node** | status, time, dns, version, services, syslog |
-| **Syslog** | view syslog/journal entries with filtering, manage rsyslog service (start/stop/restart/reload) |
+| **Syslog** | view syslog/journal, manage rsyslog service, configure remote forwarding via SSH |
 | **Disks** | SMART, init-gpt, wipe, LVM/LVMthin CRUD, directories, ZFS detail |
 | **Hardware** | PCI/USB device listing for passthrough |
 | **Scan** | NFS, CIFS, iSCSI, LVM, ZFS, PBS, GlusterFS target discovery |
@@ -256,6 +256,12 @@ prox-cli syslog list --since 2024-01-01 --until 2024-01-02
 prox-cli syslog journal --lastentries 200
 prox-cli syslog service-status
 prox-cli syslog service-restart
+
+# Remote syslog forwarding (via SSH to the Proxmox node)
+prox-cli syslog config-show
+prox-cli syslog config-set --server 10.0.0.5 --port 514 --protocol tcp
+prox-cli syslog config-set --server siem.local --protocol udp --facility "auth.*"
+prox-cli syslog config-delete
 ```
 
 ### Debugging with verbose mode

@@ -48,4 +48,43 @@ pub enum SyslogCommand {
     ServiceRestart,
     /// Reload rsyslog service configuration
     ServiceReload,
+    /// Show remote syslog forwarding configuration (via SSH)
+    ConfigShow {
+        /// SSH user for the Proxmox node
+        #[arg(long, default_value = "root")]
+        ssh_user: String,
+        /// SSH proxy/jump host (overrides config)
+        #[arg(long, short = 'J')]
+        proxy: Option<String>,
+    },
+    /// Set remote syslog forwarding target (via SSH)
+    ConfigSet {
+        /// Remote syslog server address
+        #[arg(long)]
+        server: String,
+        /// Remote syslog server port
+        #[arg(long, default_value = "514")]
+        port: u16,
+        /// Protocol: tcp or udp
+        #[arg(long, default_value = "udp")]
+        protocol: String,
+        /// Syslog facility filter
+        #[arg(long, default_value = "*.*")]
+        facility: String,
+        /// SSH user for the Proxmox node
+        #[arg(long, default_value = "root")]
+        ssh_user: String,
+        /// SSH proxy/jump host (overrides config)
+        #[arg(long, short = 'J')]
+        proxy: Option<String>,
+    },
+    /// Remove remote syslog forwarding configuration (via SSH)
+    ConfigDelete {
+        /// SSH user for the Proxmox node
+        #[arg(long, default_value = "root")]
+        ssh_user: String,
+        /// SSH proxy/jump host (overrides config)
+        #[arg(long, short = 'J')]
+        proxy: Option<String>,
+    },
 }

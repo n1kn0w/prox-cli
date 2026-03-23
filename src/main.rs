@@ -94,7 +94,16 @@ async fn run() -> Result<()> {
             commands::hardware::handle(&api, command, cli.json).await
         }
         Commands::Syslog { command } => {
-            commands::syslog::handle(&api, command, cli.json, cli.yes).await
+            let proxy = config.ssh.as_ref().and_then(|s| s.proxy.clone());
+            commands::syslog::handle(
+                &api,
+                command,
+                cli.json,
+                cli.yes,
+                &config.proxmox.host,
+                proxy.as_deref(),
+            )
+            .await
         }
         Commands::Scan { command } => {
             commands::scan::handle(&api, command, cli.json).await
