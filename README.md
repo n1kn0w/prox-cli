@@ -32,6 +32,7 @@ prox-cli status
 
 # SSH into a VM (IP resolved via guest agent)
 prox-cli ssh 100 --user admin
+prox-cli ssh 100 -J user@bastion:2222
 
 # Snapshot everything before a lab exercise
 prox-cli snap-all baseline --running-only
@@ -140,7 +141,7 @@ prox-cli ct list         # List all containers
 | Domain | Commands |
 |--------|----------|
 | **Dashboard** | `prox-cli status` — CPU/RAM/disk + VM/CT overview |
-| **SSH** | `prox-cli ssh <vmid>` — resolve IP via guest agent, exec SSH |
+| **SSH** | `prox-cli ssh <vmid>` — resolve IP via guest agent, exec SSH, proxy/jump host support (`-J`) |
 | **Snap-all** | `prox-cli snap-all <name>` — parallel snapshot of all guests |
 | **Rollback-all** | `prox-cli rollback-all <name>` — parallel rollback with confirmation |
 | **Bulk** | start/stop/migrate/suspend all VMs/CTs |
@@ -153,6 +154,7 @@ prox-cli ct list         # List all containers
 | Domain | Commands |
 |--------|----------|
 | **Node** | status, time, dns, version, services, syslog |
+| **Syslog** | view syslog/journal entries with filtering, manage rsyslog service (start/stop/restart/reload) |
 | **Disks** | SMART, init-gpt, wipe, LVM/LVMthin CRUD, directories, ZFS detail |
 | **Hardware** | PCI/USB device listing for passthrough |
 | **Scan** | NFS, CIFS, iSCSI, LVM, ZFS, PBS, GlusterFS target discovery |
@@ -230,6 +232,30 @@ prox-cli scan nfs --server 192.168.1.1
 prox-cli scan cifs --server 192.168.1.1 --username admin --password secret
 prox-cli scan iscsi --portal 192.168.1.1
 prox-cli scan pbs --server pbs.local --username root@pam --password secret
+```
+
+### SSH with jump host
+
+```bash
+# Direct SSH via guest agent IP
+prox-cli ssh 100 --user admin
+
+# SSH through a proxy/jump host
+prox-cli ssh 100 -J user@bastion:2222
+
+# Or configure it globally in config.toml
+# [ssh]
+# proxy = "user@bastion:2222"
+```
+
+### Syslog & Journal
+
+```bash
+prox-cli syslog list --limit 100 --service pvedaemon
+prox-cli syslog list --since 2024-01-01 --until 2024-01-02
+prox-cli syslog journal --lastentries 200
+prox-cli syslog service-status
+prox-cli syslog service-restart
 ```
 
 ### Debugging with verbose mode
